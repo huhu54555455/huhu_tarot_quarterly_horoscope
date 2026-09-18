@@ -1,0 +1,1 @@
+# huhu_tarot_quarterly_horoscope
