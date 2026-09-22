@@ -26,8 +26,8 @@
       <form class="form-card" id="tarotForm">
         <h2>开始抽取</h2>
         <div class="field"><label for="name">称呼 <small>将写入报告标题</small></label><input id="name" name="name" maxlength="18" placeholder="例如：huhu" required></div>
-        <div class="field"><label for="redeemCode">兑换码 <small>每枚仅可生成一次</small></label><input class="redeem-code" id="redeemCode" name="redeemCode" maxlength="32" autocomplete="off" autocapitalize="characters" placeholder="例如：HUHU-Q4-A7K9-P2M4" required></div>
-        <p class="redeem-status" id="redeemStatus" aria-live="polite">兑换码会在生成报告时核销；请确认信息无误后再提交。</p>
+        <div class="field"><label for="redeemCode">兑换码 <small>同一码可找回本机已生成的报告</small></label><input class="redeem-code" id="redeemCode" name="redeemCode" maxlength="32" autocomplete="off" autocapitalize="characters" placeholder="例如：HUHU-Q4-A7K9-P2M4" required></div>
+        <p class="redeem-status" id="redeemStatus" aria-live="polite">输入有效兑换码后生成；同一浏览器再次输入同一码，会找回首次生成的报告。</p>
         <div class="number-grid">
           <div class="field"><label for="wands">权杖 · 事业 <small>1–20</small></label><input id="wands" name="wands" type="number" inputmode="numeric" min="1" max="20" required></div>
           <div class="field"><label for="cups">圣杯 · 感情 <small>1–20</small></label><input id="cups" name="cups" type="number" inputmode="numeric" min="1" max="20" required></div>
@@ -37,7 +37,7 @@
           <div class="field"><label for="court">人物 · 画像 <small>1–32</small></label><input id="court" name="court" type="number" inputmode="numeric" min="1" max="32" required></div>
         </div>
         <button class="generate" type="submit">生成我的 2026Q4 牌阵</button>
-        <p class="lock">20⁴ × 44 × 32 种组合 · 牌阵在本地生成；仅兑换码核销状态会发送至 HuHu 的校验服务。</p>
+        <p class="lock">20⁴ × 44 × 32 种组合 · 牌阵与报告均在本地生成并保存在当前浏览器。</p>
       </form>
     </section>
 
@@ -58,8 +58,60 @@
   </main>
   <script>
     const ranks=["一","二","三","四","五","六","七","八","九","十"];
-    // Cloudflare Worker：仅校验并核销兑换码，牌阵仍在浏览器本地生成。
-    const REDEEM_ENDPOINT="https://huhu-tarot-code-check.huhu54555455.workers.dev/redeem";
+    const CODE_PATTERN=/^HUHU-Q4-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+    // 公开静态版：有效码列表与报告逻辑均在本页；首次报告保存于当前浏览器。
+    const ACTIVE_CODES=new Set([
+      "HUHU-Q4-TJAS-KW2C", "HUHU-Q4-CYBZ-9G9C", "HUHU-Q4-WM9A-4D2G", "HUHU-Q4-VS8X-A92U",
+      "HUHU-Q4-VEBY-NUKF", "HUHU-Q4-T4RL-ZBF4", "HUHU-Q4-6MWP-MWBP", "HUHU-Q4-KXY4-8LCZ",
+      "HUHU-Q4-242W-7SVH", "HUHU-Q4-YYFB-AW2F", "HUHU-Q4-P58G-XT8U", "HUHU-Q4-G6H5-KYUU",
+      "HUHU-Q4-9CC2-JBFX", "HUHU-Q4-2STP-4BKU", "HUHU-Q4-4DNC-HDEH", "HUHU-Q4-N2K8-6EYA",
+      "HUHU-Q4-2BNN-FC64", "HUHU-Q4-5BK2-JTZ9", "HUHU-Q4-6M3D-724B", "HUHU-Q4-YWLZ-XCD2",
+      "HUHU-Q4-US75-JPZ4", "HUHU-Q4-2BQX-L7MC", "HUHU-Q4-RM67-C8Q6", "HUHU-Q4-ZLQ4-86VT",
+      "HUHU-Q4-HV9V-7N66", "HUHU-Q4-6FNA-D3VC", "HUHU-Q4-KUYE-J4HC", "HUHU-Q4-S7ZB-36DZ",
+      "HUHU-Q4-RT3W-PTY7", "HUHU-Q4-NWFC-UNE3", "HUHU-Q4-GRV5-ANWQ", "HUHU-Q4-MABL-DYXT",
+      "HUHU-Q4-Y8B9-44XZ", "HUHU-Q4-LNG5-3KQY", "HUHU-Q4-Y3VS-PSX5", "HUHU-Q4-2VAA-M3X6",
+      "HUHU-Q4-TYYN-YPYA", "HUHU-Q4-7P9W-VP7G", "HUHU-Q4-W59R-TP9F", "HUHU-Q4-9ETU-348W",
+      "HUHU-Q4-KXTG-C7EE", "HUHU-Q4-97PS-BPKB", "HUHU-Q4-J4E2-M73Y", "HUHU-Q4-W2PB-EHQ5",
+      "HUHU-Q4-FT8D-2R2R", "HUHU-Q4-RPMN-4J93", "HUHU-Q4-8UQ8-FT8L", "HUHU-Q4-9TWF-J96W",
+      "HUHU-Q4-MHSE-B8QH", "HUHU-Q4-PJX2-P5FW", "HUHU-Q4-GT3H-2WMU", "HUHU-Q4-S84E-LY4G",
+      "HUHU-Q4-E5X4-8YDW", "HUHU-Q4-RULG-2A9F", "HUHU-Q4-5TXV-5AK6", "HUHU-Q4-T9MZ-CL9T",
+      "HUHU-Q4-T5EE-Y7DB", "HUHU-Q4-3Q5P-AY37", "HUHU-Q4-LDKC-QVFN", "HUHU-Q4-LNT9-VJKH",
+      "HUHU-Q4-H9QH-BZ5C", "HUHU-Q4-EX4Q-ZYGU", "HUHU-Q4-G6VG-Y82A", "HUHU-Q4-QLL7-6FCM",
+      "HUHU-Q4-L8F4-MR4W", "HUHU-Q4-DNE9-NW74", "HUHU-Q4-S8JM-PRD6", "HUHU-Q4-Z9RY-RMR2",
+      "HUHU-Q4-S5AJ-T368", "HUHU-Q4-VYED-NM9L", "HUHU-Q4-N66J-XDYL", "HUHU-Q4-9TZN-ML9X",
+      "HUHU-Q4-7S5P-F56Z", "HUHU-Q4-TXE3-2WET", "HUHU-Q4-N6TU-Q4BU", "HUHU-Q4-UZUD-P4UN",
+      "HUHU-Q4-SA72-MM4P", "HUHU-Q4-R4FR-6ZAN", "HUHU-Q4-RVE2-75PB", "HUHU-Q4-E2HQ-H9WW",
+      "HUHU-Q4-4LUZ-DTAJ", "HUHU-Q4-9PQ2-RUZ4", "HUHU-Q4-TN9Y-VFRB", "HUHU-Q4-GG44-L3YW",
+      "HUHU-Q4-X5PR-UDHB", "HUHU-Q4-2NCE-UY55", "HUHU-Q4-YM5Y-NEAP", "HUHU-Q4-MCKM-Z3EK",
+      "HUHU-Q4-RNUY-VZE2", "HUHU-Q4-US8M-64E5", "HUHU-Q4-WXP5-PEZZ", "HUHU-Q4-SDKR-FPAV",
+      "HUHU-Q4-5MD6-YK5C", "HUHU-Q4-LA8N-77QR", "HUHU-Q4-G9XW-7YD9", "HUHU-Q4-2VMW-HWAC",
+      "HUHU-Q4-VNVD-CXVG", "HUHU-Q4-UM4T-NGVH", "HUHU-Q4-48VJ-HH6R", "HUHU-Q4-6QV2-ULCQ",
+      "HUHU-Q4-A95Q-UMQL", "HUHU-Q4-G4AH-ZBE8", "HUHU-Q4-K97T-UJ82", "HUHU-Q4-XNUD-6BV5",
+      "HUHU-Q4-58ZT-FMSW", "HUHU-Q4-QQPK-DDRY", "HUHU-Q4-AJES-5WHY", "HUHU-Q4-SVYP-UUG8",
+      "HUHU-Q4-6J79-7WV7", "HUHU-Q4-RN29-N39K", "HUHU-Q4-U62G-GCSJ", "HUHU-Q4-E4UH-XP6L",
+      "HUHU-Q4-L4HS-98R4", "HUHU-Q4-DTP3-GDEY", "HUHU-Q4-MJ3M-RUCY", "HUHU-Q4-RRS7-BQAP",
+      "HUHU-Q4-3N7J-HC99", "HUHU-Q4-UM8D-CQSC", "HUHU-Q4-WDFM-C2F3", "HUHU-Q4-Z3LA-KYVA",
+      "HUHU-Q4-AM6S-CV5L", "HUHU-Q4-YFQP-4DNN", "HUHU-Q4-BRS8-DA9A", "HUHU-Q4-UU8V-WQ92",
+      "HUHU-Q4-CAZ8-KUSM", "HUHU-Q4-AZ8C-A97G", "HUHU-Q4-V9NR-LSHB", "HUHU-Q4-T9SR-FWEG",
+      "HUHU-Q4-XLXA-YVQ9", "HUHU-Q4-WTY4-VQNV", "HUHU-Q4-E2UX-PBK9", "HUHU-Q4-KHLV-QQQ6",
+      "HUHU-Q4-N742-GXN2", "HUHU-Q4-VT26-SU9F", "HUHU-Q4-9HA5-DTKH", "HUHU-Q4-2EXD-79RV",
+      "HUHU-Q4-KDJF-DW2H", "HUHU-Q4-79SK-5EDN", "HUHU-Q4-XRBT-TBKQ", "HUHU-Q4-C44W-APTD",
+      "HUHU-Q4-LZ8K-6LDU", "HUHU-Q4-VG8X-34TG", "HUHU-Q4-34KE-94BJ", "HUHU-Q4-VV77-HFVW",
+      "HUHU-Q4-W6H6-WFHB", "HUHU-Q4-R7U5-HY3F", "HUHU-Q4-9CZ8-M56E", "HUHU-Q4-N2R9-BN43",
+      "HUHU-Q4-JFJQ-V4EL", "HUHU-Q4-4HAW-8E32", "HUHU-Q4-VERG-U3DJ", "HUHU-Q4-5ZZG-2FBJ",
+      "HUHU-Q4-A2RW-LR77", "HUHU-Q4-49AN-GAL6", "HUHU-Q4-GG65-U2QP", "HUHU-Q4-CMY7-BUJN",
+      "HUHU-Q4-T8PJ-TXZK", "HUHU-Q4-XYEP-LQA6", "HUHU-Q4-QYEE-ANT3", "HUHU-Q4-GAVH-333Y",
+      "HUHU-Q4-634T-3PJZ", "HUHU-Q4-RFZQ-5E6C", "HUHU-Q4-JEQ9-XNNK", "HUHU-Q4-RW75-97WD",
+      "HUHU-Q4-MMV5-NYSZ", "HUHU-Q4-GUVY-GS3F", "HUHU-Q4-BXML-YXJ7", "HUHU-Q4-4ZCR-8974",
+      "HUHU-Q4-RLT7-R7Q7", "HUHU-Q4-ZMML-XAHA", "HUHU-Q4-QYNY-SASQ", "HUHU-Q4-Q2P9-TME6",
+      "HUHU-Q4-9ZBF-XNWP", "HUHU-Q4-NE4S-6PX8", "HUHU-Q4-KYEV-PUJV", "HUHU-Q4-GC74-N55Y",
+      "HUHU-Q4-5PUS-9WAK", "HUHU-Q4-KWBG-4C35", "HUHU-Q4-VNJ2-R3R8", "HUHU-Q4-EY5P-4JPW",
+      "HUHU-Q4-6R5P-XCDP", "HUHU-Q4-WPV8-47ED", "HUHU-Q4-44N2-QTBY", "HUHU-Q4-CHSV-T5H7",
+      "HUHU-Q4-BECK-6ZQL", "HUHU-Q4-9YCB-YLQP", "HUHU-Q4-GBBW-9QTS", "HUHU-Q4-SQEU-ZVTQ",
+      "HUHU-Q4-T8UQ-9GC9", "HUHU-Q4-CCQV-27SH", "HUHU-Q4-XCPA-49LG", "HUHU-Q4-TX9A-NKSX",
+      "HUHU-Q4-YPZB-FK5V", "HUHU-Q4-8PJ6-LC8D", "HUHU-Q4-F2H3-MUHA", "HUHU-Q4-Y6Y3-JPAN",
+      "HUHU-Q4-SZMX-Z67B", "HUHU-Q4-FNUL-37LK", "HUHU-Q4-HSPF-ZL6X", "HUHU-Q4-L45Y-GDBB"
+    ]);
     const suitMeta={
       wands:{cn:"权杖",field:"事业",cls:"wands",keywords:["行动","边界","推进"]},
       cups:{cn:"圣杯",field:"感情",cls:"cups",keywords:["感受","连接","回应"]},
@@ -89,13 +141,13 @@
     function cardHTML(c,n,role){const meta=c.type==='minor'||c.type==='court'?suitMeta[c.suit]:{cls:"major"},kw=c.keywords||keywords(c),label=c.label||cardName(c),src=`${assetPath}${encodeURIComponent(imageFile(c))}`;return `<article class="tarot-card ${meta.cls} ${c.type==='major'?'major':''} ${c.type==='court'?'court':''} ${c.orientation==='逆位'?'reversed':''}"><span class="num">${n}</span><img class="card-image" src="${src}" alt="${label}" /><div class="card-role">${role}</div><div class="card-name">${label}</div><div class="card-keywords">${kw.map(x=>`<span>${x}</span>`).join('')}</div></article>`}
     function adviceHTML(title,text,basis){return `<li><h3>${title}</h3><p>${text}</p><p class="basis"><b>依据：</b>${basis}</p></li>`}
     function fitReport(){const report=document.querySelector('#report'),content=document.querySelector('#reportContent'),style=getComputedStyle(report);report.style.setProperty('--report-scale','1');const available=report.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom)-2,required=content.scrollHeight,scale=Math.min(1,available/required);report.style.setProperty('--report-scale',String(scale));}
-    function render(values,serverReport){const cards=serverReport?.cards;if(!cards)throw new Error('报告资料必须由兑换服务返回。');
-      document.querySelector('#reportName').textContent=`${serverReport?.name||values.name} 2026Q4季度运势`;
+    function render(values,report){const cards=report?.cards;if(!cards)throw new Error('报告资料无法生成。');
+      document.querySelector('#reportName').textContent=`${report.name||values.name} 2026Q4季度运势`;
       document.querySelector('#inputLine').innerHTML=[['权杖',values.wands],['圣杯',values.cups],['宝剑',values.swords],['星币',values.pentacles],['大牌',values.major],['人物',values.court]].map(([a,b])=>`<span>${a} <b>${b}</b></span>`).join('');
       document.querySelector('#cross').innerHTML=`<div style="grid-column:2;grid-row:1">${cardHTML(cards.cups,2,'感情 · 圣杯位')}</div><div style="grid-column:1;grid-row:2">${cardHTML(cards.wands,1,'事业 · 权杖位')}</div><div style="grid-column:2;grid-row:2">${cardHTML(cards.major,5,'季度主题 · 大牌位')}</div><div style="grid-column:3;grid-row:2">${cardHTML(cards.pentacles,4,'财富 · 星币位')}</div><div style="grid-column:2;grid-row:3">${cardHTML(cards.swords,3,'情绪 · 宝剑位')}</div>`;
       document.querySelector('#courtZone').innerHTML=cardHTML(cards.court,6,'季度画像 · 人物牌');
       const label=c=>c.label||cardName(c),narrative=(c,field)=>c.narrative||areaText(c,field);
-      document.querySelector('#story').innerHTML=`<h3>⑤ Q4 的故事线 · ${label(cards.major)}</h3><p>${narrative(cards.major)}</p><div class="aspects"><article class="aspect"><h4>① 事业 · ${label(cards.wands)}</h4><p>${narrative(cards.wands,'wands')}</p></article><article class="aspect"><h4>② 感情 · ${label(cards.cups)}</h4><p>${narrative(cards.cups,'cups')}</p></article><article class="aspect"><h4>③ 情绪 · ${label(cards.swords)}</h4><p>${narrative(cards.swords,'swords')}</p></article><article class="aspect"><h4>④ 财富 · ${label(cards.pentacles)}</h4><p>${narrative(cards.pentacles,'pentacles')}</p></article></div><p class="story-role"><b>⑥ 季度画像 · ${label(cards.court)}</b>${narrative(cards.court)}</p><p class="story-close">${serverReport.storyClose}</p>`;
+      document.querySelector('#story').innerHTML=`<h3>⑤ Q4 的故事线 · ${label(cards.major)}</h3><p>${narrative(cards.major)}</p><div class="aspects"><article class="aspect"><h4>① 事业 · ${label(cards.wands)}</h4><p>${narrative(cards.wands,'wands')}</p></article><article class="aspect"><h4>② 感情 · ${label(cards.cups)}</h4><p>${narrative(cards.cups,'cups')}</p></article><article class="aspect"><h4>③ 情绪 · ${label(cards.swords)}</h4><p>${narrative(cards.swords,'swords')}</p></article><article class="aspect"><h4>④ 财富 · ${label(cards.pentacles)}</h4><p>${narrative(cards.pentacles,'pentacles')}</p></article></div><p class="story-role"><b>⑥ 季度画像 · ${label(cards.court)}</b>${narrative(cards.court)}</p><p class="story-close">${report.storyClose}</p>`;
       document.querySelector('#advice').innerHTML=[
         adviceHTML('守住关键事项，但不把所有事都扛在自己身上',`把一项事业重点写成“依据、分工、复盘节点”三件事。`,`${cardName(cards.wands)}＋${cardName(cards.court)}`),
         adviceHTML('把等待决定改成有截止日的核对',`补足信息；涉及资源时，先确认预算、风险与执行条件。`,`${cardName(cards.swords)}＋${cardName(cards.pentacles)}`),
@@ -103,17 +155,16 @@
       ].join('');
       requestAnimationFrame(()=>requestAnimationFrame(fitReport));
     }
+    function localCard(card){return {...card,label:cardName(card),keywords:keywords(card),narrative:areaText(card)}}
+    function buildLocalReport(values){const cards={wands:localCard(decks.wands[values.wands-1]),cups:localCard(decks.cups[values.cups-1]),swords:localCard(decks.swords[values.swords-1]),pentacles:localCard(decks.pentacles[values.pentacles-1]),major:localCard(decks.major[values.major-1]),court:localCard(decks.court[values.court-1])};return {name:String(values.name||'HuHu').trim().slice(0,18)||'HuHu',cards,storyClose:`这季从「${cards.major.keywords[0]}」开始：在事业、关系、情绪与资源之间逐一安放优先级，让希望与行动都能被长期承受。`}}
     const form=document.querySelector('#tarotForm');
     const redeemStatus=document.querySelector('#redeemStatus');
     function setRedeemStatus(message,kind=''){redeemStatus.textContent=message;redeemStatus.className=`redeem-status ${kind}`}
-    async function redeem(code,values){
-      if(!REDEEM_ENDPOINT.startsWith('https://'))throw new Error('兑换校验服务尚未配置，请联系 HuHu。');
-      const response=await fetch(REDEEM_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,...values})});
-      let data={};try{data=await response.json()}catch(error){}
-      if(!response.ok)throw new Error(data.message||'兑换码校验失败，请稍后重试。');
-      return data;
-    }
-    form.addEventListener('submit',async event=>{event.preventDefault();if(!form.reportValidity())return;const button=form.querySelector('.generate'),original=button.textContent,fd=new FormData(form),code=String(fd.get('redeemCode')||'').trim().toUpperCase();const values=Object.fromEntries(fd.entries());Object.keys(values).forEach(k=>{if(k!=='name'&&k!=='redeemCode')values[k]=Number(values[k])});button.disabled=true;button.textContent='正在核销兑换码…';setRedeemStatus('正在核销兑换码，请不要关闭此页面。');try{const result=await redeem(code,values);setRedeemStatus('兑换成功，正在生成你的专属报告。','success');render(values,result.report);document.querySelector('#entryView').hidden=true;document.querySelector('#resultView').hidden=false;window.scrollTo({top:0,behavior:'auto'});}catch(error){setRedeemStatus(error.message||'兑换码无法使用，请联系 HuHu。','error');}finally{button.disabled=false;button.textContent=original;}});
+    const storageKey=code=>`huhu-q4-report-v1:${code}`;
+    const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+    function savedReport(code){try{const saved=JSON.parse(localStorage.getItem(storageKey(code)));return saved?.values&&saved?.report?.cards?saved:null}catch(error){return null}}
+    async function stagedGenerate(code,values){const saved=savedReport(code);setRedeemStatus(saved?'已找到此兑换码上次生成的报告，正在准备呈现…':'正在确认兑换码，准备开始洗牌…');await pause(2200);setRedeemStatus(saved?'正在还原你的专属牌阵…':'正在洗牌与排列六张牌…');await pause(2300);setRedeemStatus(saved?'正在生成报告画面…':'正在解读牌阵，生成你的专属报告…');await pause(2500);if(saved)return saved;const report=buildLocalReport(values),record={values,report,createdAt:new Date().toISOString()};localStorage.setItem(storageKey(code),JSON.stringify(record));return record}
+    form.addEventListener('submit',async event=>{event.preventDefault();if(!form.reportValidity())return;const button=form.querySelector('.generate'),original=button.textContent,fd=new FormData(form),code=String(fd.get('redeemCode')||'').trim().toUpperCase(),values=Object.fromEntries(fd.entries());Object.keys(values).forEach(k=>{if(k!=='name'&&k!=='redeemCode')values[k]=Number(values[k])});if(!CODE_PATTERN.test(code)||!ACTIVE_CODES.has(code)){setRedeemStatus('这枚兑换码无效，请检查后重试。','error');return}button.disabled=true;button.textContent='正在生成中…';try{const record=await stagedGenerate(code,values);setRedeemStatus('报告已生成；同一浏览器再次输入此码，可找回这一份报告。','success');render(record.values,record.report);document.querySelector('#entryView').hidden=true;document.querySelector('#resultView').hidden=false;window.scrollTo({top:0,behavior:'auto'});}catch(error){setRedeemStatus('报告暂时无法保存，请刷新页面后重试。','error')}finally{button.disabled=false;button.textContent=original;}});
     document.querySelector('#backButton').addEventListener('click',()=>{document.querySelector('#resultView').hidden=true;document.querySelector('#entryView').hidden=false;window.scrollTo({top:0,behavior:'auto'});});
     addEventListener('resize',()=>{if(!document.querySelector('#resultView').hidden)requestAnimationFrame(fitReport)});
 
