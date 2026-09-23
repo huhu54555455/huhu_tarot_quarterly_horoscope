@@ -136,7 +136,28 @@
     const decks={wands:minorDeck("wands"),cups:minorDeck("cups"),swords:minorDeck("swords"),pentacles:minorDeck("pentacles"),major:majorDeck(),court:courtDeck()};
     function cardName(c){if(c.type==='minor')return `${suitMeta[c.suit].cn}${c.rank} · ${c.orientation}`;if(c.type==='major')return `${c.name} · ${c.orientation}`;return `${suitMeta[c.suit].cn}${c.rank} · ${c.orientation}`}
     function keywords(c){if(known[c.key])return known[c.key];if(c.type==='major'){const base=majorKeywords[c.index];return c.orientation==='正位'?base:["调整",base[1],"重新校准"]}if(c.type==='court'){const base=courtKeywords[c.rank];return c.orientation==='正位'?base:["收敛",base[1],"校准"]}const base=suitMeta[c.suit].keywords;const index=ranks.indexOf(c.rank);return c.orientation==='正位'?[rankMeaning[index].slice(0,2),base[1],base[2]]:["调整",base[1],"重新安排"]}
-    function areaText(c){const base=c.type==='major'?majorKeywords[c.index][0]:c.type==='court'?courtKeywords[c.rank][0]:rankMeaning[ranks.indexOf(c.rank)];const action=c.orientation==='正位'?"可以顺着它推进": "适合先回看条件、调整节奏";return `${cardName(c)}指向「${base}」；${action}。`}
+   function areaText(c){const base=c.type==='major'?majorKeywords[c.index][0]:c.type==='court'?courtKeywords[c.rank][0]:rankMeaning[ranks.indexOf(c.rank)];const action=c.orientation==='正位'?"可以顺着它推进": "适合先回看条件、调整节奏";return `${cardName(c)}指向「${base}」；${action}。`}
+    const minorScenes=['一个新的念头刚出现，重点不是做大，而是辨认它是否值得开始。','两种期待正在拉扯，需要先分清真正想保留的是什么。','事情来到需要协作与沟通的阶段，单靠一个人很难走远。','外在看似稳定，也要留意惯性是否让选择变窄。','摩擦把真实问题推到台前，竞争、委屈或分歧都在要求回应。','旧的安排正在退场，真正的课题是如何平稳过渡。','你需要分清哪些事值得守住，哪些消耗不必再证明自己。','进展靠重复、训练与节奏，不是一次漂亮的冲刺。','成果已经接近，最后的边界、确认或收尾不能省略。','一个周期走到饱和，完成、卸担或告别会为下一段腾出空间。'];
+    const minorMoves=['只启动一个最小、可验证的尝试','把两个选项的代价和想要写清楚','约一次能推进事情的协作或沟通','检查现有规则是否仍然服务于你','把冲突拆成具体事实与可谈条件','为过渡期留出时间、预算或缓冲','明确底线，并停止不必要的拉扯','设一个可重复执行的节奏','完成最后一次核对，再给出承诺','做完收尾，并为下一阶段留出位置'];
+    const majorScenes=['你站在新旅程的门口；允许试探，但别把天真当成准备。','资源并不缺，关键是把意图、能力与行动放在同一个方向。','答案还在安静处；暂不表态也是一种有意识的选择。','这是适合滋养、创造与让关系自然生长的一季。','你需要建立结构与边界，承担能让局面稳定的那部分。','旧有的信念、规则或老师正在影响你；先辨认自己真正认同什么。','关系与价值观来到选择点，亲近不等于无需对齐。','方向感会决定速度；先握住缰绳，再谈推进。','真正的力量来自温和而持续的自我管理，不是压制。','你需要从噪音里抽身，提炼真正值得追随的指引。','外部节奏正在变化，弹性比控制感更可靠。','需要一次诚实的衡量：责任、边界和结果都要放到台面上。','暂停并非倒退；换一个视角，才看得见卡住处的价值。','一段旧模式必须结束，新的秩序才有空间生长。','这是一段调和期；让不同需求慢慢找到可共存的比例。','欲望、依赖或恐惧容易绑住人；先看清自己把力量交给了什么。','不再可靠的结构会松动，真实虽来得突然，却能让重建开始。','修复与希望在缓慢回流，适合把目光放回长期方向。','感受很强，却未必等于事实；先辨识，再决定相信什么。','清晰、生命力与表达正在回归，适合让成果被看见。','过去的经验正在召唤你回应；该复盘，也该做出新的决定。','一个阶段可以整合收束；带着已经学会的东西进入下一程。'];
+    const majorMoves=['保留探索，但先做足一项基础准备','把已有资源列出来，完成第一步执行','为直觉留一段不被打扰的时间','为真正想培育的关系或作品持续投入','建立一个可执行的边界或规则','检视沿用的规则是否仍符合你的价值','把关系中的关键选择说清楚','确定一个方向并减少分心','用温和但稳定的方式处理难题','暂时退出噪音，独自整理判断','预留弹性，不把变化当成失败','用事实与责任做一次明确判断','主动暂停，换视角再决定','结束一件已经失去生命力的事','用小步调和代替非黑即白','识别一项正在消耗你的依赖或恐惧','为旧结构的松动准备替代方案','选择一项值得长期修复和投入的方向','先验证信息，避免在不安中下结论','让成果、喜悦或真实表达被看见','复盘过去，并回应已经成熟的召唤','完成整合与收尾，再开启下一阶段'];
+    function orientationNote(c){return c.orientation==='正位'?'正位表示这股能量可以被直接调用，但仍需要具体落地。':'逆位不等于不好；它提醒你先识别阻力、遗漏或过度用力之处，再调整路径。'}
+    function areaText(c){
+      if(c.type==='major')return majorScenes[c.index]+' '+orientationNote(c);
+      if(c.type==='court'){const trait=courtKeywords[c.rank].join('、'),field=suitMeta[c.suit].field;return '这张人物牌描绘了你在'+field+'课题中更适合采用的姿态：'+trait+'。 '+(c.orientation==='正位'?'把这份特质用在关键场合，让人看见你的判断与投入。':'别急着扮演得过满；先校准角色、承诺与能量，再决定怎样出手。')}
+      return '在'+suitMeta[c.suit].field+'课题里，'+minorScenes[ranks.indexOf(c.rank)]+' '+orientationNote(c);
+    }
+    function actionFor(c){
+      if(c.type==='major')return majorMoves[c.index];
+      if(c.type==='court')return c.orientation==='正位'?'用'+courtKeywords[c.rank][0]+'的方式承担一个关键角色':'先校准自己承担的角色与边界';
+      const move=minorMoves[ranks.indexOf(c.rank)];return c.orientation==='正位'?move:'回看条件后，'+move;
+    }
+    function storyClose(cards){return '这季不是六条各自分开的讯息，而是一段有次序的旅程：'+cards.major.keywords[0]+'像开场的灯，提醒你先'+actionFor(cards.major)+'。随后，事业要求你'+actionFor(cards.wands)+'；情绪与判断要先'+actionFor(cards.swords)+'，资源才适合'+actionFor(cards.pentacles)+'。当你用'+cardName(cards.court)+'所代表的方式出现，并在关系里'+actionFor(cards.cups)+'，这条线才会从一个念头，慢慢走成能够被你承受的现实。'}
+    function adviceFor(cards){return [
+      {title:'把「'+cards.major.keywords[0]+'」落实到事业的一个节点',text:'本季不需要同时推进所有事。先'+actionFor(cards.major)+'；再在事业上'+actionFor(cards.wands)+'。把它写成一项有截止日、可复盘的行动。',basis:cardName(cards.major)+'＋'+cardName(cards.wands)},
+      {title:'先安顿判断与资源，再做投入',text:'当你感到犹豫或紧绷时，先'+actionFor(cards.swords)+'；涉及金钱、时间与机会时，再'+actionFor(cards.pentacles)+'。这样能避免用焦虑替代决定。',basis:cardName(cards.swords)+'＋'+cardName(cards.pentacles)},
+      {title:'用更合适的姿态回应重要关系',text:'感情与连接不必靠猜。请'+actionFor(cards.cups)+'，并'+actionFor(cards.court)+'；一次真实、边界清楚的回应，会比反复揣测更有力量。',basis:cardName(cards.cups)+'＋'+cardName(cards.court)}
+    ]}
     function imageFile(c){if(c.type==='major')return majorImageFiles[c.index];const prefix=c.suit==='pentacles'?'Pents':suitMeta[c.suit].cn==='权杖'?'Wands':suitMeta[c.suit].cn==='圣杯'?'Cups':'Swords';const cardNumber=c.type==='court'?({侍从:11,骑士:12,皇后:13,国王:14}[c.rank]):ranks.indexOf(c.rank)+1;return `${prefix}${String(cardNumber).padStart(2,'0')}.jpg`}
     function cardHTML(c,n,role){const meta=c.type==='minor'||c.type==='court'?suitMeta[c.suit]:{cls:"major"},kw=c.keywords||keywords(c),label=c.label||cardName(c),src=`${assetPath}${encodeURIComponent(imageFile(c))}`;return `<article class="tarot-card ${meta.cls} ${c.type==='major'?'major':''} ${c.type==='court'?'court':''} ${c.orientation==='逆位'?'reversed':''}"><span class="num">${n}</span><img class="card-image" src="${src}" alt="${label}" /><div class="card-role">${role}</div><div class="card-name">${label}</div><div class="card-keywords">${kw.map(x=>`<span>${x}</span>`).join('')}</div></article>`}
     function adviceHTML(title,text,basis){return `<li><h3>${title}</h3><p>${text}</p><p class="basis"><b>依据：</b>${basis}</p></li>`}
@@ -148,15 +169,13 @@
       document.querySelector('#courtZone').innerHTML=cardHTML(cards.court,6,'季度画像 · 人物牌');
       const label=c=>c.label||cardName(c),narrative=(c,field)=>c.narrative||areaText(c,field);
       document.querySelector('#story').innerHTML=`<h3>⑤ Q4 的故事线 · ${label(cards.major)}</h3><p>${narrative(cards.major)}</p><div class="aspects"><article class="aspect"><h4>① 事业 · ${label(cards.wands)}</h4><p>${narrative(cards.wands,'wands')}</p></article><article class="aspect"><h4>② 感情 · ${label(cards.cups)}</h4><p>${narrative(cards.cups,'cups')}</p></article><article class="aspect"><h4>③ 情绪 · ${label(cards.swords)}</h4><p>${narrative(cards.swords,'swords')}</p></article><article class="aspect"><h4>④ 财富 · ${label(cards.pentacles)}</h4><p>${narrative(cards.pentacles,'pentacles')}</p></article></div><p class="story-role"><b>⑥ 季度画像 · ${label(cards.court)}</b>${narrative(cards.court)}</p><p class="story-close">${report.storyClose}</p>`;
-      document.querySelector('#advice').innerHTML=[
-        adviceHTML('守住关键事项，但不把所有事都扛在自己身上',`把一项事业重点写成“依据、分工、复盘节点”三件事。`,`${cardName(cards.wands)}＋${cardName(cards.court)}`),
-        adviceHTML('把等待决定改成有截止日的核对',`补足信息；涉及资源时，先确认预算、风险与执行条件。`,`${cardName(cards.swords)}＋${cardName(cards.pentacles)}`),
-        adviceHTML('用一个小而具体的回应，恢复重要连接',`对仍有价值的人或关系，发出一次真实、可执行的回应。`,`${cardName(cards.cups)}＋${cardName(cards.major)}`)
-      ].join('');
+     document.querySelector('#advice').innerHTML=[
+        ...adviceFor(cards).map(item=>adviceHTML(item.title,item.text,item.basis))
+     ].join('');
       requestAnimationFrame(()=>requestAnimationFrame(fitReport));
     }
     function localCard(card){return {...card,label:cardName(card),keywords:keywords(card),narrative:areaText(card)}}
-    function buildLocalReport(values){const cards={wands:localCard(decks.wands[values.wands-1]),cups:localCard(decks.cups[values.cups-1]),swords:localCard(decks.swords[values.swords-1]),pentacles:localCard(decks.pentacles[values.pentacles-1]),major:localCard(decks.major[values.major-1]),court:localCard(decks.court[values.court-1])};return {name:String(values.name||'HuHu').trim().slice(0,18)||'HuHu',cards,storyClose:`这季从「${cards.major.keywords[0]}」开始：在事业、关系、情绪与资源之间逐一安放优先级，让希望与行动都能被长期承受。`}}
+    function buildLocalReport(values){const cards={wands:localCard(decks.wands[values.wands-1]),cups:localCard(decks.cups[values.cups-1]),swords:localCard(decks.swords[values.swords-1]),pentacles:localCard(decks.pentacles[values.pentacles-1]),major:localCard(decks.major[values.major-1]),court:localCard(decks.court[values.court-1])};return {name:String(values.name||'HuHu').trim().slice(0,18)||'HuHu',cards,storyClose:storyClose(cards)}}
     const form=document.querySelector('#tarotForm');
     const redeemStatus=document.querySelector('#redeemStatus');
     function setRedeemStatus(message,kind=''){redeemStatus.textContent=message;redeemStatus.className=`redeem-status ${kind}`}
